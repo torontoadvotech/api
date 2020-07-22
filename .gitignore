@@ -1,0 +1,6 @@
+  
+.prettierrc
+config.env
+node_modules
+devData
+dist
