@@ -1,19 +1,21 @@
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+const { BlobServiceClient } = require("@azure/storage-blob");
 
-process.on('uncaughtException', err => {
-  console.log('UNCAUGHT EXCEPTION Shutting down...');
+process.on("uncaughtException", (err) => {
+  console.log("UNCAUGHT EXCEPTION Shutting down...");
   console.log(err.name, err.message, err.stack);
 
   process.exit(1); // Code 1 stands for uncaught exception
 });
 
-dotenv.config({ path: './config.env' });
+dotenv.config({ path: "./config.env" });
 
-const app = require('./app.js');
+const app = require("./app.js");
 
+// Connect MongoDB
 const DB = process.env.DATABASE.replace(
-  '<PASSWORD>',
+  "<PASSWORD>",
   process.env.DATABASE_PASSWORD
 );
 
@@ -21,9 +23,9 @@ mongoose
   .connect(DB, {
     useNewUrlParser: true,
     useCreateIndex: true,
-    useFindAndModify: false
+    useFindAndModify: false,
   })
-  .then(() => console.log('DB Connection Successful'));
+  .then(() => console.log("DB Connection Successful"));
 
 const port = process.env.PORT || 3000;
 
@@ -31,8 +33,8 @@ const server = app.listen(port, () => {
   console.log(`app running on port ${port}`);
 });
 
-process.on('unhandledRejection', err => {
-  console.log('UNHANDLED REJECTION Shutting down...');
+process.on("unhandledRejection", (err) => {
+  console.log("UNHANDLED REJECTION Shutting down...");
   console.log(err.name, err.message, err.stack);
 
   server.close(() => {
