@@ -1,5 +1,6 @@
 const multer = require("multer");
 const sharp = require("sharp");
+const { BlobServiceClient } = require("@azure/storage-blob");
 const User = require("../models/userModel");
 const handlerFactory = require("./handlerFactory");
 const AppError = require("../utils/appError");
@@ -15,7 +16,6 @@ exports.getMe = (req, res, next) => {
 const multerStorage = multer.memoryStorage();
 
 const multerFilter = (req, file, cb) => {
-  console.log("file", file);
   if (file.mimetype.startsWith("image")) {
     cb(null, true);
   } else {
@@ -29,14 +29,71 @@ const upload = multer({
 });
 
 exports.storeUserPhoto = upload.single("photo");
+exports.formatUserPhoto = catchAsync(async (req, res, next) => {
+  // Move to the next middleware if no image uploaded
+  if (!req.file) return next();
+
+  // Format the uploaded image
+  const formattedImage = await sharp(req.file.buffer)
+    .resize(500, 500)
+    .toFormat("jpeg")
+    .jpeg({ quality: 90 })
+    .toBuffer();
+
+  // Overwrite the unformatted image with the formatted version
+  req.file.buffer = formattedImage;
+
+  next();
+});
 exports.uploadUserPhoto = catchAsync(async (req, res, next) => {
-  console.log("file", req.file);
+  // Move to the next middleware if no image uploaded
+  if (!req.file) return next();
+
+  const blobServiceClient = BlobServiceClient.fromConnectionString(
+    process.env.AZURE_STORAGE_CONNECTION_STRING
+  );
+
+  // 1. Get the user's Azure container or create one if it doesn't exist
+  const containerName = req.user.id;
+  const containerClient = blobServiceClient.getContainerClient(containerName);
+
+  containerClient.createIfNotExists();
+
+  // 2.Upload the image to the container
+  // Create the blob
+  const blobName = `profile-picture-${Date.now()}-${req.user.id}.jpeg`;
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+  // Upload the data to the blob
+  const image = req.file.buffer;
+  const length = Buffer.byteLength(image);
+  const uploadBlobResponse = await blockBlobClient.upload(image, length);
+
+  // Save the file path to be stored in mongoDB
+  req.file.filePath = `https://torontoadvotech.blob.core.windows.net/${req.user.id}/${blobName}`;
+
+  if (uploadBlobResponse.errorCode) {
+    return next(new AppError("Error uploading photo", 500));
+  }
 
   next();
 });
 
+// Update current user
+
+const filterObj = (obj, ...allowedFields) => {
+  const newObj = {};
+
+  Object.keys(obj).forEach((el) => {
+    if (allowedFields.includes(el)) {
+      newObj[el] = obj[el];
+    }
+  });
+
+  return newObj;
+};
+
 exports.updateMe = catchAsync(async (req, res, next) => {
-  console.log(req.body);
   if (req.body.password || req.body.passwordConfirm) {
     return next(
       new AppError(
@@ -46,9 +103,20 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     );
   }
 
-  //TODO: Restrict the fields users can update with this route
+  //Restrict the fields users can update with this route
+  const filteredBody = filterObj(
+    req.body,
+    "name",
+    "email",
+    "pronouns",
+    "bio",
+    "location"
+  );
 
-  const updatedUser = await User.findByIdAndUpdate(req.user.id, req.body, {
+  // If a photo is uploaded add the path to the body
+  if (req.file) filteredBody.photo = req.file.filePath;
+
+  const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
     runValidators: true,
     new: true,
   });
