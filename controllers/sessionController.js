@@ -25,14 +25,14 @@ exports.requestSession = catchAsync(async (req, res, next) => {
     await sendEmail({
       email: mentor.email,
       subject: 'New mentorship request!',
-      message
+      message,
     });
 
     res.status(200).json({
       status: 'success',
       data: {
-        session
-      }
+        session,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -42,10 +42,8 @@ exports.requestSession = catchAsync(async (req, res, next) => {
 exports.acceptRejectSession = catchAsync(async (req, res, next) => {
   const session = await Session.findOne({
     _id: req.params.sessionId,
-    mentor: req.user.id
+    mentor: req.user.id,
   });
-
-  const mentee = await User.findById(session.mentee);
 
   if (!session) {
     return next('No unconfirmed session matches id provided', 404);
@@ -53,29 +51,73 @@ exports.acceptRejectSession = catchAsync(async (req, res, next) => {
   let subject;
   let message;
 
-  if (req.body.accepted == true) {
+  console.log(req.body.accepted);
+
+  if (req.body.accepted === 'true') {
     session.confirmed = true;
+    session.rejected = false;
+    session.cancelled = false;
     subject = `Your mentorship request has been accepted!`;
     message = `Your mentorship request with ${req.user.name} has been accepted! To review this session log into your account at www.torontoadvotech.com/login`;
-  } else if (req.body.accepted == false) {
+  } else if (req.body.accepted === 'false') {
     session.rejected = true;
+    session.confirmed = false;
+    session.cancelled = false;
     subject = `Your mentorship request has been rejected`;
     message = `Your mentorship request with ${req.user.name} has been rejected. To send a new request log into your account at www.torontoadvotech.com/login`;
   } else {
-    next(new AppError('The session must be accepted or rejected', 400));
+    return next(new AppError('The session must be accepted or rejected', 400));
   }
 
   try {
     await session.save();
     await sendEmail({
-      email: mentee.email,
+      email: session.mentee.email,
       subject,
-      message
+      message,
     });
 
     res.status('200').json({
       status: 'success',
-      session
+      session,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+exports.cancelSession = catchAsync(async (req, res, next) => {
+  const session = await Session.findOne({
+    _id: req.params.sessionId,
+  });
+
+  console.log(session);
+  if (!session) {
+    return next(new AppError('No session matches id provided', 404));
+  }
+
+  if (session.confirmed !== true) {
+    return next(
+      new AppError('Session must be in accepted status to be cancelled', 404)
+    );
+  }
+
+  session.confirmed = false;
+  session.cancelled = true;
+
+  const otherUserRole = req.user.role === 'mentee' ? 'mentor' : 'mentee';
+
+  try {
+    await session.save();
+    await sendEmail({
+      email: session[otherUserRole].email,
+      subject: 'Your mentoring session has been cancelled',
+      message: `Your mentorship request with ${req.user.name} has been cancelled. To send a new request log into your account at www.torontoadvotech.com/login`,
+    });
+
+    res.status('200').json({
+      status: 'success',
+      session,
     });
   } catch (error) {
     console.log(error);
@@ -88,8 +130,8 @@ exports.getMySessions = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     data: {
-      sessions
-    }
+      sessions,
+    },
   });
 });
 

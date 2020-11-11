@@ -1,25 +1,32 @@
-const express = require('express');
-const authController = require('../controllers/authController');
-const sessionController = require('../controllers/sessionController');
+const express = require("express");
+const authController = require("../controllers/authController");
+const sessionController = require("../controllers/sessionController");
 
 const router = express.Router({ mergeParams: true });
 
 router.use(authController.protect);
 
 router
-  .route('/')
-  .get(authController.restrictTo('admin'), sessionController.getAllSessions)
+  .route("/")
+  .get(authController.restrictTo("admin"), sessionController.getAllSessions)
   .post(
-    authController.restrictTo('mentee'),
+    authController.restrictTo("mentee"),
     sessionController.setMentorMenteeIds,
     sessionController.requestSession
   );
 
-router.get('/mySessions', sessionController.getMySessions);
+router.get("/mySessions", sessionController.getMySessions);
 
 router.patch(
-  '/sessionResponse/:sessionId',
-  authController.restrictTo('mentor'),
+  "/sessionResponse/:sessionId",
+  authController.restrictTo("mentor"),
   sessionController.acceptRejectSession
 );
+
+router.patch(
+  "/cancelSession/:sessionId",
+  // authController.restrictTo("mentor", "mentee"),
+  sessionController.cancelSession
+);
+
 module.exports = router;

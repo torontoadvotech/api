@@ -1,49 +1,53 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const sessionSchema = new mongoose.Schema({
   date: {
     type: Date,
-    required: [true, 'A session must have a date']
+    required: [true, "A session must have a date"],
   },
   mentee: {
     type: mongoose.Schema.ObjectId,
-    ref: 'User',
-    required: [true, 'A session must have a mentee']
+    ref: "User",
+    required: [true, "A session must have a mentee"],
   },
   mentor: {
     type: mongoose.Schema.ObjectId,
-    ref: 'User',
-    required: [true, 'A session must have a mentor']
+    ref: "User",
+    required: [true, "A session must have a mentor"],
   },
   requestedAt: {
     type: Date,
-    default: Date.now()
+    default: Date.now(),
   },
   confirmed: {
     type: Boolean,
-    default: false
+    default: false,
   },
   rejected: {
     type: Boolean,
-    default: false
+    default: false,
   },
-  confirmedAt: Date
+  cancelled: {
+    type: Boolean,
+    default: false,
+  },
+  confirmedAt: Date,
 });
 
 // Populate referenced mentors/mentees
 sessionSchema.pre(/^find/, function(next) {
   this.populate({
-    path: 'mentee',
-    select: 'name photo pronouns'
+    path: "mentee",
+    select: "name photo pronouns email",
   });
   this.populate({
-    path: 'mentor',
-    select: 'name photo pronouns'
+    path: "mentor",
+    select: "name photo pronouns email",
   });
 
   next();
 });
 
-const Session = mongoose.model('Session', sessionSchema);
+const Session = mongoose.model("Session", sessionSchema);
 
 module.exports = Session;
