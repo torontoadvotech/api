@@ -53,13 +53,13 @@ exports.acceptRejectSession = catchAsync(async (req, res, next) => {
 
   console.log(req.body.accepted);
 
-  if (req.body.accepted === 'true') {
+  if (req.body.accepted == true) {
     session.confirmed = true;
     session.rejected = false;
     session.cancelled = false;
     subject = `Your mentorship request has been accepted!`;
     message = `Your mentorship request with ${req.user.name} has been accepted! To review this session log into your account at www.torontoadvotech.com/login`;
-  } else if (req.body.accepted === 'false') {
+  } else if (req.body.accepted == false) {
     session.rejected = true;
     session.confirmed = false;
     session.cancelled = false;
