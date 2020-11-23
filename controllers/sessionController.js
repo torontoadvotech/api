@@ -91,7 +91,6 @@ exports.cancelSession = catchAsync(async (req, res, next) => {
     _id: req.params.sessionId,
   });
 
-  console.log(session);
   if (!session) {
     return next(new AppError('No session matches id provided', 404));
   }

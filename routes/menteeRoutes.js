@@ -10,6 +10,9 @@ router.use('/:menteeId/sessions', sessionRouter);
 
 router
   .route('/')
-  .get(userController.showOnly('mentee'), menteeController.getAllMentees);
+  .get(
+    userController.setSelectedRole('mentee'),
+    menteeController.getAllMentees
+  );
 
 module.exports = router;

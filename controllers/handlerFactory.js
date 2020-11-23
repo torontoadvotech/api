@@ -2,7 +2,7 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const ApiFeatures = require('../utils/apiFeatures');
 
-exports.getAll = Model => {
+exports.getAll = (Model) => {
   return catchAsync(async (req, res, next) => {
     // To allow for nested GET sessions on mentor & mentee(hack)
     let filter = {};
@@ -10,7 +10,10 @@ exports.getAll = Model => {
     if (req.params.menteeId) filter = { mentee: req.params.menteeId };
 
     // Check if query has been set to show only mentors / mentees
-    const query = req.showOnlyQuery ? req.showOnlyQuery : Model.find(filter);
+    if (req.selectedRole) {
+      filter.role = req.selectedRole;
+    }
+    const query = Model.find(filter);
 
     const features = new ApiFeatures(query, req.query)
       .filter()
@@ -20,12 +23,15 @@ exports.getAll = Model => {
 
     const docs = await features.query;
 
+    const count = await Model.countDocuments(filter);
+
     res.status(200).json({
       status: 'success',
+      count,
       results: docs.length,
       data: {
-        data: docs
-      }
+        data: docs,
+      },
     });
   });
 };
@@ -45,17 +51,17 @@ exports.getOne = (Model, populateOptions) => {
     res.status(200).json({
       status: 'success',
       data: {
-        data: doc
-      }
+        data: doc,
+      },
     });
   });
 };
 
-exports.updateOne = Model => {
+exports.updateOne = (Model) => {
   return catchAsync(async (req, res, next) => {
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-      runValidators: true
+      runValidators: true,
     });
 
     if (!doc) {
@@ -65,13 +71,13 @@ exports.updateOne = Model => {
     res.status(200).json({
       status: 'success',
       data: {
-        data: doc
-      }
+        data: doc,
+      },
     });
   });
 };
 
-exports.deleteOne = Model => {
+exports.deleteOne = (Model) => {
   return catchAsync(async (req, res, next) => {
     const doc = await Model.findByIdAndDelete(req.params.id);
 
@@ -81,7 +87,7 @@ exports.deleteOne = Model => {
 
     res.status(204).json({
       status: 'success',
-      data: null
+      data: null,
     });
   });
 };

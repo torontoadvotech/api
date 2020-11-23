@@ -10,6 +10,9 @@ router.use('/:mentorId/sessions', sessionRouter);
 
 router
   .route('/')
-  .get(userController.showOnly('mentor'), mentorController.getAllMentors);
+  .get(
+    userController.setSelectedRole('mentor'),
+    mentorController.getAllMentors
+  );
 
 module.exports = router;

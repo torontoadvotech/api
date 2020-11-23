@@ -1,10 +1,10 @@
-const multer = require("multer");
-const sharp = require("sharp");
-const { BlobServiceClient } = require("@azure/storage-blob");
-const User = require("../models/userModel");
-const handlerFactory = require("./handlerFactory");
-const AppError = require("../utils/appError");
-const catchAsync = require("../utils/catchAsync");
+const multer = require('multer');
+const sharp = require('sharp');
+const { BlobServiceClient } = require('@azure/storage-blob');
+const User = require('../models/userModel');
+const handlerFactory = require('./handlerFactory');
+const AppError = require('../utils/appError');
+const catchAsync = require('../utils/catchAsync');
 
 exports.getMe = (req, res, next) => {
   req.params.id = req.user.id;
@@ -16,10 +16,10 @@ exports.getMe = (req, res, next) => {
 const multerStorage = multer.memoryStorage();
 
 const multerFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image")) {
+  if (file.mimetype.startsWith('image')) {
     cb(null, true);
   } else {
-    cb(new AppError("Not an image! please upload only images", 400), false);
+    cb(new AppError('Not an image! please upload only images', 400), false);
   }
 };
 
@@ -28,7 +28,7 @@ const upload = multer({
   fileFilter: multerFilter,
 });
 
-exports.storeUserPhoto = upload.single("photo");
+exports.storeUserPhoto = upload.single('photo');
 exports.formatUserPhoto = catchAsync(async (req, res, next) => {
   // Move to the next middleware if no image uploaded
   if (!req.file) return next();
@@ -36,7 +36,7 @@ exports.formatUserPhoto = catchAsync(async (req, res, next) => {
   // Format the uploaded image
   const formattedImage = await sharp(req.file.buffer)
     .resize(500, 500)
-    .toFormat("jpeg")
+    .toFormat('jpeg')
     .jpeg({ quality: 90 })
     .toBuffer();
 
@@ -73,7 +73,7 @@ exports.uploadUserPhoto = catchAsync(async (req, res, next) => {
   req.file.filePath = `https://torontoadvotech.blob.core.windows.net/${req.user.id}/${blobName}`;
 
   if (uploadBlobResponse.errorCode) {
-    return next(new AppError("Error uploading photo", 500));
+    return next(new AppError('Error uploading photo', 500));
   }
 
   next();
@@ -97,7 +97,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   if (req.body.password || req.body.passwordConfirm) {
     return next(
       new AppError(
-        "This route is not for password updates, use /updateMyPassword",
+        'This route is not for password updates, use /updateMyPassword',
         400
       )
     );
@@ -106,11 +106,11 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   //Restrict the fields users can update with this route
   const filteredBody = filterObj(
     req.body,
-    "name",
-    "email",
-    "pronouns",
-    "bio",
-    "location"
+    'name',
+    'email',
+    'pronouns',
+    'bio',
+    'location'
   );
 
   // If a photo is uploaded add the path to the body
@@ -122,7 +122,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   });
 
   res.status(200).json({
-    status: "success",
+    status: 'success',
     data: {
       data: updatedUser,
     },
@@ -133,20 +133,17 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
   await User.findByIdAndUpdate(req.user.id, { active: false });
 
   res.status(204).json({
-    status: "success",
+    status: 'success',
     data: null,
   });
 });
 
-exports.showOnly = (role) => {
-  return catchAsync(async (req, res, next) => {
-    const users = User.find({ role: role });
-
-    req.showOnlyQuery = users;
+exports.setSelectedRole = (role) =>
+  catchAsync(async (req, res, next) => {
+    req.selectedRole = role;
 
     next();
   });
-};
 
 exports.getAllUsers = handlerFactory.getAll(User);
 exports.getUser = handlerFactory.getOne(User);
@@ -155,7 +152,7 @@ exports.deleteUser = handlerFactory.deleteOne(User);
 
 exports.createUser = (req, res) => {
   res.status(500).json({
-    status: "error",
-    message: "this route is not defined, please use /signup instead",
+    status: 'error',
+    message: 'this route is not defined, please use /signup instead',
   });
 };
