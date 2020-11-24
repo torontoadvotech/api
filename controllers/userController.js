@@ -6,6 +6,16 @@ const handlerFactory = require('./handlerFactory');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 
+exports.validateEmail = catchAsync(async (req, res, next) => {
+  await User.findByIdAndUpdate(req.params.id, {
+    validatedEmail: true,
+  });
+
+  res.status(200).json({
+    status: 'success',
+  });
+});
+
 exports.getMe = (req, res, next) => {
   req.params.id = req.user.id;
 

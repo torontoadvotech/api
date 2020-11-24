@@ -7,9 +7,9 @@ const sendEmail = require('../utils/email');
 const User = require('../models/userModel');
 
 // JWT Token functions
-const signToken = id => {
+const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN
+    expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
 
@@ -25,7 +25,7 @@ const createSendToken = catchAsync(async (user, statusCode, res) => {
       Date.now() +
         process.env.JWT_REFRESH_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
-    httpOnly: true
+    httpOnly: true,
   };
 
   // Require https in production
@@ -42,8 +42,8 @@ const createSendToken = catchAsync(async (user, statusCode, res) => {
     status: 'success',
     token,
     data: {
-      user
-    }
+      user,
+    },
   });
 });
 
@@ -62,7 +62,15 @@ exports.signup = catchAsync(async (req, res, next) => {
     role: req.body.role,
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
-    passwordChangedAt: req.body.passwordChangedAt
+    passwordChangedAt: req.body.passwordChangedAt,
+  });
+
+  sendEmail({
+    email: req.body.email,
+    subject: 'Verify your email address',
+    message: `
+        Click this link to verify your email address: http:localhost:8000/api/v1/users/validateEmail/${newUser._id}
+      `,
   });
 
   // Log user in after signup
@@ -96,7 +104,7 @@ exports.logout = (req, res) => {
 
   const cookieOptions = {
     expires: expiryDate,
-    httpOnly: true
+    httpOnly: true,
   };
 
   res
@@ -114,7 +122,7 @@ exports.refreshToken = catchAsync(async (req, res, next) => {
 
   const user = await User.findOne({
     refreshToken: hashedToken,
-    refreshTokenExpires: { $gt: Date.now() }
+    refreshTokenExpires: { $gt: Date.now() },
   });
 
   if (!user) return next(new AppError('Refresh token is no longer valid'));
@@ -167,12 +175,12 @@ exports.forgotMyPassword = catchAsync(async (req, res, next) => {
     await sendEmail({
       email: user.email,
       subject: 'Your password reset token (valid for 10 minutes)',
-      message
+      message,
     });
 
     res.status(200).json({
       status: 'success',
-      message: 'Token sent to email'
+      message: 'Token sent to email',
     });
   } catch (error) {
     // If the email fails to send delete the token and log the error
@@ -194,7 +202,7 @@ exports.resetPassword = async (req, res, next) => {
 
   const user = await User.findOne({
     passwordResetToken: hashedToken,
-    passwordResetExpires: { $gt: Date.now() }
+    passwordResetExpires: { $gt: Date.now() },
   });
 
   if (!user) {

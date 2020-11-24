@@ -7,42 +7,42 @@ const userSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, 'A user must have a name'],
-    trim: true
+    trim: true,
   },
   email: {
     type: String,
     required: [true, 'A user must have an email'],
     unique: [true, 'This email has already been used'],
     lowercase: true,
-    valdate: [validator.isEmail, 'Email is invalid']
+    valdate: [validator.isEmail, 'Email is invalid'],
   },
   photo: {
-    type: String
+    type: String,
   },
   bio: {
     type: String,
-    maxlength: [500, 'Maximum of 500 characters for bio']
+    maxlength: [500, 'Maximum of 500 characters for bio'],
   },
   pronouns: String,
   role: {
     type: String,
     enum: ['mentor', 'mentee', 'admin'],
-    default: 'mentee'
+    default: 'mentee',
   },
   location: {
     type: {
       type: String,
       default: 'Point',
-      enum: ['Point']
+      enum: ['Point'],
     },
     coordinates: [Number],
-    description: String
+    description: String,
   },
   password: {
     type: String,
     required: [true, 'A password must be provided'],
     minlength: [8, 'Password must be at least 8 characters'],
-    select: false
+    select: false,
   },
   passwordConfirm: {
     type: String,
@@ -52,31 +52,37 @@ const userSchema = new mongoose.Schema({
       validator: function(val) {
         return val === this.password;
       },
-      message: 'Passwords do not match'
-    }
+      message: 'Passwords do not match',
+    },
   },
   mentors: [
     {
       type: mongoose.Schema.ObjectId,
-      ref: 'User'
-    }
+      ref: 'User',
+    },
   ],
   mentees: [
     {
       type: mongoose.Schema.ObjectId,
-      ref: 'User'
-    }
+      ref: 'User',
+    },
   ],
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
   refreshToken: String,
   refreshTokenExpires: Date,
+  validatedEmail: {
+    type: Boolean,
+    default: false,
+    select: false,
+  },
+
   active: {
     type: Boolean,
     default: true,
-    select: false
-  }
+    select: false,
+  },
 });
 
 // Document Middleware
@@ -114,7 +120,7 @@ userSchema.pre(/^find/, function(next) {
 userSchema.pre(/^find/, function(next) {
   this.populate({
     path: 'user',
-    select: 'name photo bio'
+    select: 'name photo bio',
   });
 
   next();
